@@ -1,0 +1,8 @@
+LIB=libConversions.o
+CC=gcc
+
+# Pattern rule for compiling .the library libConversions.s
+%:%.o $(LIB)
+	$(CC) $@.o $(LIB) -g -o $@
+.s.o:
+	$(CC) $(@:.o=.s) -g -c -o $@
