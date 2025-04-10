@@ -41,20 +41,34 @@ main:
 
 .text
 multiplier: 
-    # A recursive function to multiply two numbers. Take 2 input: r0:integer 1 r1:integer 2
+    # A recursive function to multiply two numbers. Take 2 input: r0:integer x r1:integer y
     # r0 = r0+r0+...+r0 for r1 times 
     # return at r0 the sum
     
     #push stack
     SUB sp, sp, #12
     STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
     
-    
+    MOV r4, r0
+    MOV r5, r1
 
-        
+    #if y=0, return
+    CMP r5, #0
+    B return
+
+    #if y>0, y=y-1
+    SUB r5, r5, #1
+    MOV r1, r5
+    BL multiplier
+    ADD r0, r0, r4
+    
     return:
     #pop stack
     LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
     ADD sp, sp, #12
     MOV pc, lr
 .data
