@@ -7,6 +7,43 @@
 # Remarks: RSA project
 #
 
+# Function: pow
+# Purpose: A function to calculate exponential of an integer
+# Inputs: r0:integer , r1: integer of the power
+# Outputs: return at r0 the value r0^r1
+# Pseudo Code: 
+# dependencies: function ""
+
+.global pow
+.text
+    # function library
+    #r4: input integer 1
+    #r5: input power of the integer
+
+    #push stack
+    SUB sp, sp, #12
+    STR lr, [sp, #0] 
+    # reserve r4-r5 value of caller
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+
+    CMP r5, #0
+    MOV r0, #0
+    BEQ return
+
+    
+    
+    return:
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    ADD sp, sp, #12
+    MOV pc, lr
+.data
+#end pow
+
+
 
 # Function: gcd
 # Purpose: A function to find the GCD of two positive integers
