@@ -92,9 +92,6 @@ main:
 
 .text
 primeness:
-    # take input of an integer n at r0 by dividing input with all integers from 2 to n/2
-    # return 1 at r0 if input is prime
-    # return 0 at r0 if input is not prime
     
     # function library
     #r4: input value
@@ -102,10 +99,13 @@ primeness:
     #r6: divisor and counter
         
     #push stack
-    SUB sp, sp, #8
+    SUB sp, sp, #16
     STR lr, [sp, #0] 
-    # reserve r4 value caller
+    # reserve r4-r6 value of caller
     STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+
     MOV r4, r0
 
     #initialize
@@ -136,7 +136,10 @@ primeness:
     
     #pop stack
     LDR lr, [sp, #0]
-    ADD sp, sp, #8
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    ADD sp, sp, #16
     MOV pc, lr
 .data
 #End primeness
