@@ -11,10 +11,11 @@
 # Purpose: This is the the function to calculate the private key or in other word
 #          a function to find the modular inverse d of integer a s.t. da = 1 (mod b)
 # Inputs: r0: phi n ( integer b), r1: e (integer a)
+# pre-requisite: phi n > e
 # Outputs: return at r0 the value private key (modular inverse found, integer d)
-# Pseudo Code: Using Eclilean Algo and algebra to find a general solution (s,t) of 
+# Pseudo Code: Using Extended Euclidean algorithm and algebra to find a general solution (s,t) of 
 #              bt+as=1
-# dependencies: function "gcd"
+# dependencies: function "mod"
 
 .global cprivexp
 cprivexp:
@@ -24,12 +25,13 @@ cprivexp:
     #r5: equation 1, coefficient of a
     #r6: equation 2, coefficient of b
     #r7: equation 2, coefficient of a
-    #r8: phi n (b)
-    #r10: e (a)
+    #r8: temp variable to store a dividend/divisor from mod function
+    #r10: temp variable to store a divisor/remainder from mod function
+    #r11: temp variable to store a quotient
 
     #push stack
-    #reserve r4-r8,r10 value of caller
-    SUB sp, sp, #32
+    #reserve r4-r8,r10-r11 value of caller
+    SUB sp, sp, #40
     STR lr, [sp, #0] 
     STR r4, [sp, #4]
     STR r5, [sp, #8]
@@ -37,8 +39,62 @@ cprivexp:
     STR r7, [sp, #16]
     STR r8, [sp, #20]
     STR r10, [sp, #24]
+    STR r11, [sp, #28]
+    #reserve the input phi n
+    STR r0, [sp, #32]
+    #reserve the input e
+    STR r1, [sp, #36]
 
+    #initialization
+    MOV r4, #1
+    MOV r5, #0
+    MOV r6, #0
+    MOV r7, #1
+    MOV r8, r0
+    MOV r10, r1
 
+    StartCpriexpLoop:
+        #calculate a quotient
+        BL __aeabi_idiv
+        MOV r11, r0
+
+        #update coefficient of equations
+        MUL r0, r6, r11
+        SUB r0, r4, r0
+        MOV r4, r6
+        MOV r6, r0
+        MUL r0, r7, r11
+        SUB r0, r5, r0
+        MOV r5, r7
+        MOV r7, r0
+
+        #calculate a remainder and reserve at r8 and r10
+        #for next iteration
+        MOV r0, r8
+        MOV r1, r10
+        BL mod
+        MOV r8, r0
+        MOV r10, r1
+
+        #if remainder = 1, end condition
+        CMP r10, #1
+        BEQ EndCpriexpLoop
+        B StartCpriexpLoop
+
+    EndCpriexpLoop:
+    LDR r1, [sp, #32]
+
+    StartCpriexpOutputLoop:
+        #if coefficient of a at r7 found < 0, add phi n until it become positive
+        CMP r7, #0
+        ADDLT r7, r7, r1
+        BLT StartCpriexpOutputLoop
+        B EndCpriexpOutputLoop
+    EndCpriexpOutputLoop:
+    B CprivexpReturn
+
+    CprivexpReturn:
+    MOV r0, r7
 
     #pop stack
     LDR lr, [sp, #0]
@@ -48,7 +104,8 @@ cprivexp:
     LDR r7, [sp, #16]
     LDR r8, [sp, #20]
     LDR r10, [sp, #24]
-    ADD sp, sp, #32
+    LDR r11, [sp, #28]
+    ADD sp, sp, #40
     MOV pc, lr
 .data
 #end cprivexp

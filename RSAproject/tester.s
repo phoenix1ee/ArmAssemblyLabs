@@ -26,7 +26,7 @@ main:
     LDR r0, [r0]
     LDR r1, =input2
     LDR r1, [r1]
-    BL __aeabi_idiv
+    BL cprivexp
 
     MOV r1, r0
     LDR r0, =output1
