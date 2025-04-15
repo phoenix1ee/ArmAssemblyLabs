@@ -7,17 +7,66 @@
 # Remarks: RSA project
 #
 
+# Function: cprivexp
+# Purpose: This is the the function to calculate the private key or in other word
+#          a function to find the modular inverse d of integer a s.t. da = 1 (mod b)
+# Inputs: r0: phi n ( integer b), r1: e (integer a)
+# Outputs: return at r0 the value private key (modular inverse found, integer d)
+# Pseudo Code: Using Eclilean Algo and algebra to find a general solution (s,t) of 
+#              bt+as=1
+# dependencies: function "gcd"
+
+.global cprivexp
+cprivexp:
+.text
+    # function library
+    #r4: equation 1, coefficient of b
+    #r5: equation 1, coefficient of a
+    #r6: equation 2, coefficient of b
+    #r7: equation 2, coefficient of a
+    #r8: phi n (b)
+    #r10: e (a)
+
+    #push stack
+    #reserve r4-r8,r10 value of caller
+    SUB sp, sp, #32
+    STR lr, [sp, #0] 
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+    STR r7, [sp, #16]
+    STR r8, [sp, #20]
+    STR r10, [sp, #24]
+
+
+
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    LDR r7, [sp, #16]
+    LDR r8, [sp, #20]
+    LDR r10, [sp, #24]
+    ADD sp, sp, #32
+    MOV pc, lr
+.data
+#end cprivexp
+
 # Function: pow
-# Purpose: A function to calculate exponential of an integer
-# Inputs: r0:integer , r1: integer of the power
+# Purpose: A function to calculate positive power of an integer
+# Scope: this function take care of only positve power index >= 0
+# Definition: 0^0 defined = 0
+# Inputs: r0:integer , r1: power index
 # Outputs: return at r0 the value r0^r1
 # Pseudo Code: 
 # dependencies: function ""
 
 .global pow
+pow:
 .text
     # function library
-    #r4: input integer 1
+    #r4: input integer
     #r5: input power of the integer
 
     #push stack
@@ -26,14 +75,26 @@
     # reserve r4-r5 value of caller
     STR r4, [sp, #4]
     STR r5, [sp, #8]
+    
+    MOV r4, r0
+    MOV r5, r1
 
     CMP r5, #0
-    MOV r0, #0
-    BEQ return
+    MOVEQ r0, #1
+    BEQ powreturn
 
-    
-    
-    return:
+    CMP r4, #0
+    MOVEQ r0, #0
+    BEQ powreturn
+
+    startpow:
+    CMP r5, #1
+    BEQ powreturn
+    MUL r0, r0, r4
+    SUB r5, r5, #1
+    B startpow
+
+    powreturn:
     #pop stack
     LDR lr, [sp, #0]
     LDR r4, [sp, #4]
@@ -42,8 +103,6 @@
     MOV pc, lr
 .data
 #end pow
-
-
 
 # Function: gcd
 # Purpose: A function to find the GCD of two positive integers

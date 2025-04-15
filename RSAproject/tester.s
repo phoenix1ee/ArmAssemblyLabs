@@ -26,7 +26,7 @@ main:
     LDR r0, [r0]
     LDR r1, =input2
     LDR r1, [r1]
-    BL gcd
+    BL __aeabi_idiv
 
     MOV r1, r0
     LDR r0, =output1
@@ -45,6 +45,6 @@ main:
 
     outputYes: .asciz "\nNumber %d is prime.\n\n"
     outputNo: .asciz "\nNumber %d is not prime.\n\n"
-    output1: .asciz "\ngcd is %d.\n\n"
+    output1: .asciz "\noutput is %d.\n\n"
 
 #End main
