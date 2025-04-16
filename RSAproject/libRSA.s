@@ -7,6 +7,39 @@
 # Remarks: RSA project
 #
 
+.global decryptChar
+
+# Function: decryptChar
+# Author: Shun Fai Lee
+# Purpose: This is the the function to decrypt a cipher character c using private key d and product p*q = n
+#          m = c^d (mod n) calculate the cipher text
+# Inputs: r0: c (cipher value to be decrypted)
+#         r1: d (private key d)
+#         r2: n (user chosen public key n p*q)
+# Outputs: return at r0 the decrypted value
+# Pseudo Code: This function reuse "encryptChar" because they use the same calculation
+# dependencies: function "encryptChar"
+
+.text
+decryptChar:
+    # function library
+    #r0: c (cipher value to be decrypted)
+    #r1: d (private key d)
+    #r2: n (user chosen public key n p*q)
+
+    #push stack
+    SUB sp, sp, #4
+    STR lr, [sp, #0] 
+
+    BL encryptChar
+
+    #pop stack
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    MOV pc, lr
+.data
+#end decryptChar
+
 .global encryptChar
 
 # Function: encryptChar
