@@ -2,7 +2,7 @@
 # Program name: libRSA.s
 
 # Author: Shun Fai Lee
-# Date: 4/X/2025
+# Date: 4/16/2025
 # Purpose: This is a library of functions for RSA algorithm
 # Remarks: RSA project
 #
