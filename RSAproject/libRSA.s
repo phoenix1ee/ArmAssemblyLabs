@@ -7,7 +7,10 @@
 # Remarks: RSA project
 #
 
+.global encryptChar
+
 # Function: encryptChar
+# Author: Shun Fai Lee
 # Purpose: This is the the function to encrypt a character c using public key e and product p*q = n
 #          c = m^e (mod n) calculate the cipher text
 # Inputs: r0: m (ascii value of character to be encrypted)
@@ -19,9 +22,8 @@
 #              This make use of the multiplicative properties in moduler arithematic
 # dependencies: function "mod"
 
-.global encryptChar
-encryptChar:
 .text
+encryptChar:
     # function library
     #r4: m (ascii value of character to be encrypted)
     #r5: e (user chosen public key e)
@@ -105,7 +107,10 @@ encryptChar:
 .data
 #end encryptChar
 
+.global cprivexp
+
 # Function: cprivexp
+# Author: Shun Fai Lee
 # Purpose: This is the the function to calculate the private key or in other word
 #          a function to find the modular inverse d of integer a s.t. da = 1 (mod b)
 # Inputs: r0: phi n ( integer b), r1: e (integer a)
@@ -115,9 +120,8 @@ encryptChar:
 #              bt+as=1
 # dependencies: function "mod"
 
-.global cprivexp
-cprivexp:
 .text
+cprivexp:
     # function library
     #r4: equation 1, coefficient of b
     #r5: equation 1, coefficient of a
@@ -209,7 +213,10 @@ cprivexp:
 .data
 #end cprivexp
 
+.global pow
+
 # Function: pow
+# Author: Shun Fai Lee
 # Purpose: A function to calculate positive power of an integer
 # Scope: this function take care of only positve power index >= 0
 # Definition: 0^0 defined = 0
@@ -218,9 +225,8 @@ cprivexp:
 # Pseudo Code: 
 # dependencies: function ""
 
-.global pow
-pow:
 .text
+pow:
     # function library
     #r4: input integer
     #r5: input power of the integer
@@ -260,15 +266,16 @@ pow:
 .data
 #end pow
 
+.global gcd
+
 # Function: gcd
+# Author: Shun Fai Lee
 # Purpose: A function to find the GCD of two positive integers
 # Inputs: r0:integer1 , r1: integer2
 # Outputs: return at r0 the value of GCD of r0 and r1
 # Pseudo Code: check for the remainder of r0/r1, and repeat the process
 # using Euclidean algorithm until reaching remainder = 0
 # dependencies: function "mod"
-
-.global gcd
 
 .text
 gcd:
@@ -333,6 +340,7 @@ gcd:
 .global primeness
 
 # Function: primeness
+# Author: Shun Fai Lee
 # Purpose: A function to check if an integer is prime or not by dividing input with all integers from 2 to n/2
 # Inputs: Take 1 input: r0:integer n at r0
 # Outputs: return at r0 the value 1 if input is prime or 0 if input is not prime
@@ -395,6 +403,7 @@ primeness:
 .global mod
 
 # Function: mod
+# Author: Shun Fai Lee
 # Purpose: A function to find the remainder of a division
 # Inputs: Take 2 input: r0:dividend and r1:divisor
 # Outputs: return the divisor back at r0 return the remainder of r0/r1 at r1
