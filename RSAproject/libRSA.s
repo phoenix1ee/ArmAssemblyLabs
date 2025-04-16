@@ -7,6 +7,104 @@
 # Remarks: RSA project
 #
 
+# Function: encryptChar
+# Purpose: This is the the function to encrypt a character c using public key e and product p*q = n
+#          c = m^e (mod n) calculate the cipher text
+# Inputs: r0: m (ascii value of character to be encrypted)
+#         r1: e (user chosen public key e)
+#         r2: n (user chosen public key n p*q)
+# Outputs: return at r0 the cipher text/encrypted value
+# Pseudo Code: find the least power i that yield a remainder 1. 
+#              Then simplify calculation to m^(e-ki) (mod n)
+#              This make use of the multiplicative properties in moduler arithematic
+# dependencies: function "mod"
+
+.global encryptChar
+encryptChar:
+.text
+    # function library
+    #r4: m (ascii value of character to be encrypted)
+    #r5: e (user chosen public key e)
+    #r6: n (user chosen public key n p*q)
+    #r7: temp variable for remainder
+    #r8: temp variable for power
+
+    #push stack
+    #reserve r4-r8 value of caller
+    SUB sp, sp, #24
+    STR lr, [sp, #0] 
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+    STR r7, [sp, #16]
+    STR r8, [sp, #20]
+
+    #reserve the input in r4-r6
+    MOV r4, r0
+    MOV r5, r1
+    MOV r6, r2
+
+    #find remainder of m^1 mod n, used to simplify calculation of big power
+    MOV r1, r6
+    BL mod
+    #save to r7 for reserve
+    MOV r7, r1
+    #save a count, this is the power of m s.t. m^1 mod n
+    MOV r8, #1
+
+    #find the integer a s.t. m^a = 1 mod(n)
+    StartencryLoop1:
+        CMP r1, #1
+        MULNE r0, r1, r7
+        ADDNE r8, r8, #1
+        MOVNE r1, r6
+        BLNE mod
+        BNE StartencryLoop1
+        B EndencryLoop1
+    EndencryLoop1:
+
+    # find e mod r8 and replace e
+    MOV r0, r5
+    MOV r1, r8
+    BL mod
+    MOV r5, r1
+
+    #find remainder of m^1 mod n
+    MOV r0, r4
+    MOV r1, r6
+    BL mod
+    #save to r7 for reserve
+    MOV r7, r1
+    #save a count, to count against r5
+    MOV r8, #1
+
+    #find m^e mod(n)
+    StartencryLoop2:
+        CMP r8, r5
+        MULNE r0, r1, r7
+        ADDNE r8, r8, #1
+        MOVNE r1, r6
+        BLNE mod
+        BNE StartencryLoop2
+        B EndencryLoop2
+    EndencryLoop2:
+
+    encryptCharReturn:
+    MOV r0, r1
+
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    LDR r7, [sp, #16]
+    LDR r8, [sp, #20]
+    ADD sp, sp, #24
+    MOV pc, lr
+
+.data
+#end encryptChar
+
 # Function: cprivexp
 # Purpose: This is the the function to calculate the private key or in other word
 #          a function to find the modular inverse d of integer a s.t. da = 1 (mod b)
@@ -53,6 +151,7 @@ cprivexp:
     MOV r8, r0
     MOV r10, r1
 
+    #use a loop to solve for the coefficients of equation 1 and 2 repeatedly until reaching remainder = 1
     StartCpriexpLoop:
         #calculate a quotient
         BL __aeabi_idiv

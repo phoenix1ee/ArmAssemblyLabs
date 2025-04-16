@@ -22,11 +22,18 @@ main:
     LDR r1, =input2
     BL scanf
 
+    #scan user input
+    LDR r0, =format1
+    LDR r1, =input3
+    BL scanf
+
     LDR r0, =input
     LDR r0, [r0]
     LDR r1, =input2
     LDR r1, [r1]
-    BL cprivexp
+    LDR r2, =input3
+    LDR r2, [r2]
+    BL encryptChar
 
     MOV r1, r0
     LDR r0, =output1
@@ -42,6 +49,7 @@ main:
     format1: .asciz "%d"
     input: .word 0
     input2: .word 0
+    input3: .word 0
 
     outputYes: .asciz "\nNumber %d is prime.\n\n"
     outputNo: .asciz "\nNumber %d is not prime.\n\n"
