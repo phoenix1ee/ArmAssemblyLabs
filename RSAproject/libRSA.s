@@ -5,6 +5,34 @@
 # Purpose: This is a library of functions for RSA algorithm
 # Remarks: RSA project
 #
+.global modulus
+
+# Function: modulus
+# Author: Shun Fai Lee
+# Purpose: This is the function to calculate the product n of p*q
+# Inputs: r0: p (user input prime number p)
+#         r1: q (user input prime number q)
+# Outputs: return at r0 p*q
+# dependencies: none
+
+.text
+modulus:
+    # function library
+    #r0: p (user input prime number p)
+    #r1: q (user input prime number q)
+
+    #push stack
+    SUB sp, sp, #4
+    STR lr, [sp, #0] 
+
+    MUL r0, r0, r1
+    
+    #pop stack
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    MOV pc, lr
+.data
+#end modulus
 
 .global decryptChar
 
