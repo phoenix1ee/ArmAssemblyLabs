@@ -116,25 +116,31 @@ cprivexp:
 
 # Function: cpubexp
 # Author: Shun Fai Lee
-# Purpose: This is the function to prompt user for two prime number p and q, check the legitimacy and calculate the public key n = p*q
+# Purpose: This is the function to calculate and return the public key n = p*q
 #          and the phi n = (p-1)*(q-1)
-# Inputs: none (prompt user for input)
+# Inputs: r0: P
+#         r1: Q
 # Outputs: return at r0 = p*q
-           return at r1 = (p-1)*(q-1)
-# dependencies: 
+#          return at r1 = (p-1)*(q-1)
 
 .text
 cpubexp:
     # function library
-    #r0: p (user input prime number p)
-    #r1: q (user input prime number q)
+    #r4: p (user input prime number p)
+    #r5: q (user input prime number q)
 
     #push stack
     SUB sp, sp, #4
-    STR lr, [sp, #0] 
+    STR lr, [sp, #0]
 
-    MUL r0, r0, r1
-    
+    MOV r4, r0
+    MOV r5, r1
+    MUL r0, r4, r5
+
+    SUB r1, r0, r4
+    SUB r1, r1, r5
+    ADD r1, r1, #1
+
     #pop stack
     LDR lr, [sp, #0]
     ADD sp, sp, #4
@@ -346,6 +352,125 @@ gcd:
 .data
 #end gcd
 
+.global legitK
+
+# Function: legitK
+# Author: Shun Fai Lee
+# Purpose: This is the function to prompt user for two valid prime number as keys
+# Inputs: none
+# Outputs: return at r0: P and at r1: Q
+# dependencies: "primeness"
+
+.text
+legitK:
+    # function library
+    #r4: p (user input prime number p)
+    #r5: q (user input prime number q)
+
+    #push stack
+    SUB sp, sp, #12
+    STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+
+    startlegitKLoop1:
+        #print the prompt to user
+        LDR r0, =promptP
+        BL printf
+        #scan user input
+        LDR r0, =format1
+        LDR r1, =inputP
+        BL scanf
+
+        #load the input value
+        LDR r4, =inputP
+        LDR r4, [r4]
+
+        #check the input
+        #exit at -1
+        CMP r4, #-1
+        MOVEQ r0, #-1
+        BEQ returnlegitK
+        
+        #check if P is prime
+        MOV r0, r4
+        BL primeness
+        CMP r0, #0
+        BEQ errorinput1
+
+        B startlegitKLoop2
+
+        errorinput1:
+        LDR r0, =promptError
+        BL printf
+        B startlegitKLoop1
+
+    startlegitKLoop2:
+        #print the prompt to user
+        LDR r0, =promptQ
+        BL printf
+        #scan user input
+        LDR r0, =format1
+        LDR r1, =inputQ
+        BL scanf
+
+        #load the input value
+        LDR r5, =inputQ
+        LDR r5, [r5]
+
+        #check the input
+        #exit at -1
+        CMP r5, #-1
+        MOVEQ r0, #-1
+        BEQ returnlegitK
+        
+        #check if Q is prime
+        MOV r0, r5
+        BL primeness
+        CMP r0, #0
+        BEQ errorinput2
+
+        B Cont
+
+        errorinput2:
+        LDR r0, =promptError
+        BL printf
+        B startlegitKLoop2
+
+    Cont:
+    #check if 122<P*Q<0x7fffffff=2,147,483,647
+    MUL r0, r4, r5
+    CMP r0, #122
+    BLE invalidKey
+
+    MOV r0, r4
+    MOV r1, r5
+    B returnlegitK
+
+    invalidKey:
+    #print the prompt to user
+    LDR r0, =promptError2
+    BL printf
+    B startlegitKLoop1
+
+    returnlegitK:
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    ADD sp, sp, #12
+    MOV pc, lr
+.data
+    promptP: .asciz "Please enter the 1st prime number or -1 to quit\n: "
+    promptQ: .asciz "Please enter the 2nd prime number or -1 to quit\n: "
+    promptError: .asciz "\nInput is not prime.\n\n"
+    promptError2: .asciz "\nKeys chosen are not legitimate. \nPlease make sure product of two prime numbers is greater than 122 and smaller than 0x7fffffff or 2,147,483,647\n\n"
+
+    format1: .asciz "%d"
+    inputP: .word 0
+    inputQ: .word 0
+#End legitK
+
 .global mod
 
 # Function: mod
@@ -479,6 +604,9 @@ primeness:
     STR r6, [sp, #12]
 
     MOV r4, r0
+
+    CMP r4, #1
+    BLE notprime
 
     #initialize
     MOV r1, #2
