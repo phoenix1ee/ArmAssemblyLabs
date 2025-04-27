@@ -33,7 +33,7 @@ main:
     LDR r1, [r1]
     LDR r2, =input3
     LDR r2, [r2]
-    BL decryptChar
+    MUL r0, r0, r1
 
     MOV r1, r0
     LDR r0, =output1
