@@ -1,7 +1,7 @@
 #
 # Program name: libRSA.s
 
-# Date: 4/26/2025
+# Date: 4/27/2025
 # Purpose: This is a library of functions for RSA algorithm
 # Remarks: RSA project
 #
@@ -352,13 +352,110 @@ gcd:
 .data
 #end gcd
 
+.global legitE
+
+# Function: legitE
+# Author: Shun Fai Lee
+# Purpose: This is the function to prompt user for a public key exponent e
+# Inputs: r0: phi n / totient
+# Outputs: return at r0: value of a valid e or -1 to quit
+# dependencies: "gcd"
+
+.text
+legitE:
+    # function library
+    #r4: e (user input public key e)
+    #r5: phi n/totient (from argument input)
+
+    #push stack
+    SUB sp, sp, #12
+    STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+
+    MOV r5, r0
+
+    startlegitELoop:
+        #print the prompt to user
+        LDR r0, =promptE
+        MOV r1, r5
+        BL printf
+        #scan user input
+        LDR r0, =formatE
+        LDR r1, =inputE
+        BL scanf
+
+        #load the input value
+        LDR r4, =inputE
+        LDR r4, [r4]
+
+        #check the input
+        #exit at -1
+        CMP r4, #-1
+        MOVEQ r0, #-1
+        BEQ returnlegitE
+        
+        #check if E > 1
+        CMP r4, #1
+        BLE legitEerrorInput
+
+        #check if E < totient
+        CMP r4, r5
+        BGE legitEerrorInput2
+
+        #check if E is co-prime to totient
+        MOV r0, r4
+        MOV r1, r5
+        BL gcd
+        CMP r0, #1
+        BNE legitEerrorInput3
+
+        B endlegitELoop
+
+        legitEerrorInput:
+        LDR r0, =promptEerror
+        BL printf
+        B startlegitELoop
+
+        legitEerrorInput2:
+        LDR r0, =promptEerror2
+        BL printf
+        B startlegitELoop
+
+        legitEerrorInput3:
+        LDR r0, =promptEerror3
+        BL printf
+        B startlegitELoop
+
+    endlegitELoop:
+
+    MOV r0, r4
+    B returnlegitE
+
+    returnlegitE:
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    ADD sp, sp, #12
+    MOV pc, lr
+.data
+    promptE: .asciz "Please enter a public key e < than the totient (P-1)*(Q-1) : %d or -1 to quit\n: "
+    promptEerror: .asciz "\nInput is not >1.\n\n"
+    promptEerror2: .asciz "\nInput is not <totient.\n\n"
+    promptEerror3: .asciz "\nInput is not co-prime to totient.\n\n"
+
+    formatE: .asciz "%d"
+    inputE: .word 0
+#End legitE
+
 .global legitK
 
 # Function: legitK
 # Author: Shun Fai Lee
 # Purpose: This is the function to prompt user for two valid prime number as keys
 # Inputs: none
-# Outputs: return at r0: P and at r1: Q
+# Outputs: return at r0: P and at r1: Q or -1 at r0 to quit
 # dependencies: "primeness"
 
 .text
@@ -396,14 +493,15 @@ legitK:
         MOV r0, r4
         BL primeness
         CMP r0, #0
-        BEQ errorinput1
+        BEQ legitKerrorinput1
 
-        B startlegitKLoop2
+        B endlegitKLoop1
 
-        errorinput1:
+        legitKerrorinput1:
         LDR r0, =promptError
         BL printf
         B startlegitKLoop1
+    endlegitKLoop1:
 
     startlegitKLoop2:
         #print the prompt to user
@@ -428,26 +526,26 @@ legitK:
         MOV r0, r5
         BL primeness
         CMP r0, #0
-        BEQ errorinput2
+        BEQ legitKerrorinput2
 
-        B Cont
+        B endlegitKLoop2
 
-        errorinput2:
+        legitKerrorinput2:
         LDR r0, =promptError
         BL printf
         B startlegitKLoop2
+    endlegitKLoop2:
 
-    Cont:
     #check if 122<P*Q<0x7fffffff=2,147,483,647
     MUL r0, r4, r5
     CMP r0, #122
-    BLE invalidKey
+    BLE legitKinvalidKey
 
     MOV r0, r4
     MOV r1, r5
     B returnlegitK
 
-    invalidKey:
+    legitKinvalidKey:
     #print the prompt to user
     LDR r0, =promptError2
     BL printf
@@ -461,8 +559,8 @@ legitK:
     ADD sp, sp, #12
     MOV pc, lr
 .data
-    promptP: .asciz "Please enter the 1st prime number or -1 to quit\n: "
-    promptQ: .asciz "Please enter the 2nd prime number or -1 to quit\n: "
+    promptP: .asciz "Please enter the 1st prime number P or -1 to quit\n: "
+    promptQ: .asciz "Please enter the 2nd prime number Q or -1 to quit\n: "
     promptError: .asciz "\nInput is not prime.\n\n"
     promptError2: .asciz "\nKeys chosen are not legitimate. \nPlease make sure product of two prime numbers is greater than 122 and smaller than 0x7fffffff or 2,147,483,647\n\n"
 

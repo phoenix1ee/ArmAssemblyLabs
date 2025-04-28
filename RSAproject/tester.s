@@ -3,7 +3,10 @@
 .global main
 main:
     #program library:
-    #r4: input value
+    #r4: modulus n = p*q
+    #r5: modulus totient / phi n = (p-1)*(q-1)
+    #r6: public key e
+    #r7: private key d
 
     SUB sp, sp, #4
     STR lr, [sp]
@@ -33,12 +36,30 @@ main:
     #LDR r1, [r1]
     #LDR r2, =input3
     #LDR r2, [r2]
-
+    
+    #prompt for P and Q
     BL legitK
+    
+    #calculate public key and store n and totient at r4 and r5
+    BL cpubexp
+    MOV r4, r0
+    MOV r5, r1
 
-    MOV r2, r1
-    MOV r1, r0
-    LDR r0, =output1
+    #prompt for public key e and store at r6
+    MOV r0, r5
+    BL legitE
+    MOV r6, r0
+
+    #calculate private key d and store at r7
+    MOV r0, r5
+    MOV r1, r6
+    BL cprivexp
+    MOV r7, r0
+
+    MOV r1, r7
+    MOV r2, r6
+    MOV r3, r4
+    LDR r0, =output2
     BL printf
 
     LDR lr, [sp]
@@ -56,5 +77,6 @@ main:
     outputYes: .asciz "\nNumber %d is prime.\n\n"
     outputNo: .asciz "\nNumber %d is not prime.\n\n"
     output1: .asciz "\noutput is %d %d.\n\n"
+    output2: .asciz "\nd is %d e is %d n is %d.\n\n"
 
 #End main
