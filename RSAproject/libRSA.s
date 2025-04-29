@@ -157,9 +157,9 @@ cpubexp:
 # Inputs: r0: c (cipher value to be decrypted)
 #         r1: d (private key d)
 #         r2: n (user chosen public key n p*q)
-# Outputs: return at r0 the decrypted value
+# Outputs: return at r0 the decrypted value, or -1 if decrypted value is not ascii value, i.e <0 or >127
 # Pseudo Code: This function reuse "encryptChar" because they use the same calculation
-# dependencies: function "encryptChar"
+# dependencies: function "euclidmod"
 
 .text
 decryptChar:
@@ -172,8 +172,26 @@ decryptChar:
     SUB sp, sp, #4
     STR lr, [sp, #0] 
 
-    BL encryptChar
+    #cipher text of 0 return 0
+    CMP r0, #0
+    BEQ decryptReturn
 
+    BL euclidmod
+    
+    #check if the decrypted value is an legitimate ascii value
+    CMP r0, #0
+    BLT decryptError
+    
+    CMP r0, #127
+    BGT decryptError
+
+    B decryptReturn
+
+    decryptError:
+    MOV r0, #-1
+    B decryptReturn
+    
+    decryptReturn:
     #pop stack
     LDR lr, [sp, #0]
     ADD sp, sp, #4
@@ -190,11 +208,8 @@ decryptChar:
 # Inputs: r0: m (ascii value of character to be encrypted)
 #         r1: e (user chosen public key e)
 #         r2: n (user chosen public key n p*q)
-# Outputs: return at r0 the cipher text/encrypted value
-# Pseudo Code: find the least power i that yield a remainder 1. 
-#              Then simplify calculation to m^(e-ki) (mod n)
-#              This make use of the multiplicative properties in moduler arithematic
-# dependencies: function "mod"
+# Outputs: return at r0 the cipher text/encrypted value, or -1 if input value is not ascii value, i.e <0 or >127 
+# dependencies: function "euclidmod"
 
 .text
 encryptChar:
@@ -202,6 +217,71 @@ encryptChar:
     #r4: m (ascii value of character to be encrypted)
     #r5: e (user chosen public key e)
     #r6: n (user chosen public key n p*q)
+
+    #push stack
+    #reserve r4-r6 value of caller
+    SUB sp, sp, #16
+    STR lr, [sp, #0] 
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+
+    #reserve the input in r4-r6
+    MOV r4, r0
+    MOV r5, r1
+    MOV r6, r2
+
+    #check if input is legitimate ascii value
+    CMP r4, #0
+    BLT encryptError
+    #0 return 0
+    MOVEQ r0, #0
+    BEQ encryptCharReturn
+    
+    CMP r4, #127
+    BGT encryptError
+
+    BL euclidmod
+    B encryptCharReturn
+
+    encryptError:
+    MOV r0, #-1
+    B encryptCharReturn
+
+    encryptCharReturn:
+
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    ADD sp, sp, #16
+    MOV pc, lr
+
+.data
+#end encryptChar
+
+.global euclidmod
+
+# Function: euclidmod
+# Author: Shun Fai Lee
+# Purpose: This is the function to use extended euclidean algorithm to calculate modulus maths of form of a^b(mod c)
+#          for use in encryption and decryption maths
+# Inputs: r0: a
+#         r1: b
+#         r2: c
+# Pseudo Code: find the least power i that yield remainder 1. 
+#              Then simplify calculation to a^(b-ki) (mod c)
+#              This make use of the multiplicative properties in moduler arithematic
+# Outputs: return at r0 = a^b(mod c) or -1 if any of them are <= 0
+# dependencies: function "mod"
+
+.text
+euclidmod:
+    # function library
+    #r4: a
+    #r5: b
+    #r6: c
     #r7: temp variable for remainder
     #r8: temp variable for power
 
@@ -220,32 +300,57 @@ encryptChar:
     MOV r5, r1
     MOV r6, r2
 
-    #find remainder of m^1 mod n, used to simplify calculation of big power
+    #if a<=0, return -1
+    CMP r4, #0
+    BLE euclidmodError
+
+    #if b<=0, return -1
+    CMP r5, #0
+    BLE euclidmodError
+
+    #if c<=0, return -1
+    CMP r6, #1
+    BLT euclidmodError
+    #if c=1, return 0
+    MOVEQ r0, #0
+    BEQ euclidmodReturn
+
+    #a=1 will return 1
+    CMP r4, #1
+    BEQ euclidmodReturn
+
+    #find remainder of a^1 mod c, used to simplify calculation of big power
     MOV r1, r6
     BL mod
+
+    #if remainder = 0, return 0
+    CMP r1, #0
+    MOVEQ r0, #0
+    BEQ euclidmodReturn
+
     #save to r7 for reserve
     MOV r7, r1
-    #save a count, this is the power of m s.t. m^1 mod n
-    MOV r8, #1
+    #save the count, this is the power of a s.t. a^x mod c = 1
+    MOV r8, #1   
 
-    #find the integer a s.t. m^a = 1 mod(n)
-    StartencryLoop1:
+    #find the integer a s.t. a^x = 1 mod(n)
+    StarteuclidmodLoop1:
         CMP r1, #1
         MULNE r0, r1, r7
         ADDNE r8, r8, #1
         MOVNE r1, r6
         BLNE mod
-        BNE StartencryLoop1
-        B EndencryLoop1
-    EndencryLoop1:
+        BNE StarteuclidmodLoop1
+        B EndeuclidmodLoop1
+    EndeuclidmodLoop1:
 
-    # find e mod r8 and replace e
+    # find b mod r8 and replace b
     MOV r0, r5
     MOV r1, r8
     BL mod
     MOV r5, r1
 
-    #find remainder of m^1 mod n
+    #find remainder of a^1 mod c
     MOV r0, r4
     MOV r1, r6
     BL mod
@@ -254,19 +359,24 @@ encryptChar:
     #save a count, to count against r5
     MOV r8, #1
 
-    #find m^e mod(n)
-    StartencryLoop2:
+    #find a^b mod(c)
+    StarteuclidmodLoop2:
         CMP r8, r5
         MULNE r0, r1, r7
         ADDNE r8, r8, #1
         MOVNE r1, r6
         BLNE mod
-        BNE StartencryLoop2
-        B EndencryLoop2
-    EndencryLoop2:
-
-    encryptCharReturn:
+        BNE StarteuclidmodLoop2
+        B EndeuclidmodLoop2
+    EndeuclidmodLoop2:
     MOV r0, r1
+    B euclidmodReturn
+
+    euclidmodError:
+    MOV r0, #-1
+    B euclidmodReturn
+
+    euclidmodReturn:
 
     #pop stack
     LDR lr, [sp, #0]
@@ -277,9 +387,9 @@ encryptChar:
     LDR r8, [sp, #20]
     ADD sp, sp, #24
     MOV pc, lr
-
 .data
-#end encryptChar
+#end euclidmod
+
 
 .global gcd
 
