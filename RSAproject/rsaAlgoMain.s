@@ -4,7 +4,7 @@
 # Author: Section 82 Team 5
 # member: Shun Fai Lee
 #         Kat Russell
-# Date: 4/X/2025
+# Date: 4/30/2025
 # Purpose: This is a program to encrypt or decrypt text with RSA Algorithm
 # Functions: cprivexp, cpubexp, decryptChar, encryptChar, gcd, legitE, legitK, mod, pow, primeness
 # input: encryption keys, file containing text to encrypt/text to decrypt
@@ -89,6 +89,22 @@ main:
             B endGenKeys
 
         endGenKeys:
+        #prompt for how to use the keys
+        LDR r0, =promptafterkeygen
+        BL printf
+
+        #scan the input
+        LDR r0, =format2
+        LDR r1, =inputtask
+        BL scanf
+
+        #load input to r0
+        LDR r0, =inputtask
+        LDRB r0, [r0]
+        CMP r0, #0x59
+        BEQ prepareToEncrypt
+        CMP r0, #0x79
+        BEQ prepareToEncrypt
         B startRSAloop
 
         startEncryptloop:
@@ -121,15 +137,34 @@ main:
             CMP r6, #-1
             BEQ endEncryptloop
 
-            MOV r1, r4
-            MOV r2, r6
-            LDR r0, =outputkey2
+            prepareToEncrypt:
+
+            #prompt for file
+            LDR r0, =prompt4enfile
             BL printf
 
-            #prompt for and encrypt input text
-            #call encryptChar
-            #
+            LDR r0, =fmt_scan
+            LDR r1, =input_buf
+            BL scanf
 
+            #call encrypter
+            LDR r0, =input_buf
+            MOV r1, r6
+            MOV r2, r4
+            BL     encrypt_file
+            CMP    r0, #0
+            BEQ    encryptFail               @ on error, print error message
+            LDR r0, =input_buf
+            BL printf
+            LDR r0, =outputendone
+            BL printf
+            B endEncryptloop
+
+            encryptFail:
+            LDR r0, =outputenfail
+            BL printf
+            B endEncryptloop
+            
         endEncryptloop:
         B startRSAloop
 
@@ -163,14 +198,30 @@ main:
             CMP r7, #-1
             BEQ endDecryptloop
 
-            MOV r1, r4
-            MOV r2, r7
-            LDR r0, =outputkey3
+            #prompt for file
+            LDR r0, =prompt4defile
             BL printf
 
-            #prompt for and decrypt input cipher
-            #call decryptChar
-            #
+            LDR r0, =fmt_scan
+            LDR r1, =input_buf
+            BL scanf
+
+            #call decrypter
+            LDR r0, =input_buf
+            MOV r1, r7
+            MOV r2, r4
+            BL decrypt_file
+            CMP    r0, #0
+            BEQ    decryptFail               @ on error, print error message
+            LDR r0, =input_buf
+            BL printf
+            LDR r0, =outputdedone
+            BL printf
+
+            decryptFail:
+            LDR r0, =outputdefail
+            BL printf
+            B endDecryptloop
 
         endDecryptloop:
         B startRSAloop
@@ -185,22 +236,34 @@ main:
     LDR r7, [sp, #16]
     ADD sp, sp, #20
     MOV pc, lr
+
 .data
     prompttask:.asciz "\nPlease choose a function (enter 1/2/3 or -1 to quit):"
     prompttaskcontent:.asciz "\n1. To generate your public and private keys\n2. To encrypt a message\n3. To decrypt a message\n"
     promptpubkeyn: .asciz "\nPlease enter public key n (enter -1 to quit):"
     promptpubkeye: .asciz "\nPlease enter public key exponent e (enter -1 to quit):"
     promptprikeyd: .asciz "\nPlease enter private key d (enter -1 to quit):"
+    promptafterkeygen: .asciz "\nDo you want to use your keys to encrypt a file? (enter Y/y to continue or any other keys to quit) :"
+    prompt4enfile: .asciz "\nEnter input file path for encryption:"
+    prompt4defile: .asciz "\nEnter input file path for decryption:"
 
     format1: .asciz "%d"
+    format2: .asciz "%s"
+    fmt_scan: .asciz "%255s"
 
     inputtask: .word 0
     inputn: .word 0
     inpute: .word 0
     inputd: .word 0
 
+    input_buf: .space 256
+
     outputkey: .asciz "\npublic key n: %d\npublic key e: %d\nprivate key d: %d\n"
     outputkey2: .asciz "\npublic key n: %d\npublic key e: %d\n"
     outputkey3: .asciz "\npublic key n: %d\nprivate key d: %d\n"
+    outputendone: .asciz "_enc.txt is generated.\n"
+    outputenfail: .asciz "\nEncrypt is not successful. Please check your input file and/or keys.\n"
+    outputdedone: .asciz "_dec.txt is generated.\n"
+    outputdefail: .asciz "\nDecrypt is not successful. Please check your input file and/or keys.\n"
 
 #End main

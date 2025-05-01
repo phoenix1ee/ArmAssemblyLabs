@@ -772,7 +772,8 @@ pow:
     startpow:
     CMP r5, #1
     BEQ powreturn
-    MUL r0, r0, r4
+    MUL r1, r0, r4
+    MOV r0, r1
     SUB r5, r5, #1
     B startpow
 
