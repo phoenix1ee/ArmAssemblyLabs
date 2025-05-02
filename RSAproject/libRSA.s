@@ -300,9 +300,6 @@ euclidmod:
     MOV r5, r1
     MOV r6, r2
 
-    #initialize r8
-    MOV r8, #0
-
     #special conditions
 
     #if a<0, return -1
@@ -359,6 +356,8 @@ euclidmod:
     BEQ euclidmodReturn
 
     #initialization
+    #initialize r8
+    MOV r8, #0
     #find remainder of a^1 mod c, used to simplify calculation of big power
     MOV r1, r6
     BL mod
