@@ -158,7 +158,6 @@ cpubexp:
 #         r1: d (private key d)
 #         r2: n (user chosen public key n p*q)
 # Outputs: return at r0 the decrypted value, or -1 if decrypted value is not ascii value, i.e <0 or >127
-# Pseudo Code: This function reuse "encryptChar" because they use the same calculation
 # dependencies: function "euclidmod"
 
 .text
@@ -171,10 +170,6 @@ decryptChar:
     #push stack
     SUB sp, sp, #4
     STR lr, [sp, #0] 
-
-    #cipher text of 0 return 0
-    CMP r0, #0
-    BEQ decryptReturn
 
     BL euclidmod
     
@@ -234,9 +229,6 @@ encryptChar:
     #check if input is legitimate ascii value
     CMP r4, #0
     BLT encryptError
-    #0 return 0
-    MOVEQ r0, #0
-    BEQ encryptCharReturn
     
     CMP r4, #127
     BGT encryptError
