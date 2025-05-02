@@ -60,7 +60,7 @@ main:
             #prompt for entering public keys component p and q
             BL legitK
             CMP r0, #-1
-            BEQ endGenKeys
+            BEQ endGenKeys1
     
             #calculate public key and store n and totient at r4 and r5
             BL cpubexp
@@ -71,7 +71,7 @@ main:
             MOV r0, r5
             BL legitE
             CMP r0, #-1
-            BEQ endGenKeys
+            BEQ endGenKeys1
             MOV r6, r0
 
             #calculate private key d and store at r7
@@ -86,9 +86,12 @@ main:
             MOV r3, r7
             LDR r0, =outputkey
             BL printf
-            B endGenKeys
+            B endGenKeys2
 
-        endGenKeys:
+        endGenKeys1:
+        B startRSAloop
+
+        endGenKeys2:
         #prompt for how to use the keys
         LDR r0, =promptafterkeygen
         BL printf
@@ -152,9 +155,11 @@ main:
             MOV r1, r6
             MOV r2, r4
             BL     encrypt_file
-            CMP    r0, #0
+            CMP    r0, #-1
             BEQ    encryptFail               @ on error, print error message
-            LDR r0, =input_buf
+            MOV r12, r0
+            LDR r0, =fmt_filename
+            MOV r1, r12
             BL printf
             LDR r0, =outputendone
             BL printf
@@ -211,12 +216,17 @@ main:
             MOV r1, r7
             MOV r2, r4
             BL decrypt_file
-            CMP    r0, #0
+            CMP    r0, #-1
             BEQ    decryptFail               @ on error, print error message
-            LDR r0, =input_buf
+
+            MOV r12, r0
+            LDR r0, =fmt_filename
+            MOV r1, r12
             BL printf
+
             LDR r0, =outputdedone
             BL printf
+            B endDecryptloop
 
             decryptFail:
             LDR r0, =outputdefail
@@ -250,6 +260,7 @@ main:
     format1: .asciz "%d"
     format2: .asciz "%s"
     fmt_scan: .asciz "%255s"
+    fmt_filename: .asciz "%s"
 
     inputtask: .word 0
     inputn: .word 0
@@ -261,9 +272,9 @@ main:
     outputkey: .asciz "\npublic key n: %d\npublic key e: %d\nprivate key d: %d\n"
     outputkey2: .asciz "\npublic key n: %d\npublic key e: %d\n"
     outputkey3: .asciz "\npublic key n: %d\nprivate key d: %d\n"
-    outputendone: .asciz "_enc.txt is generated.\n"
+    outputendone: .asciz " is generated.\n"
     outputenfail: .asciz "\nEncrypt is not successful. Please check your input file and/or keys.\n"
-    outputdedone: .asciz "_dec.txt is generated.\n"
+    outputdedone: .asciz " is generated.\n"
     outputdefail: .asciz "\nDecrypt is not successful. Please check your input file and/or keys.\n"
 
 #End main

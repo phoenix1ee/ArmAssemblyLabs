@@ -1,7 +1,7 @@
 #
 # Program name: libRSA.s
 
-# Date: 4/27/2025
+# Date: 4/30/2025
 # Purpose: This is a library of functions for RSA algorithm
 # Remarks: RSA project
 #
@@ -270,10 +270,10 @@ encryptChar:
 # Inputs: r0: a
 #         r1: b
 #         r2: c
-# Pseudo Code: find the least power i that yield remainder 1. 
-#              Then simplify calculation to a^(b-ki) (mod c)
+# Pseudo Code: find the lst remainder of r = a mod c. 
+#              Then repeat calculating r*a (mod c) for b-1 times
 #              This make use of the multiplicative properties in moduler arithematic
-# Outputs: return at r0 = a^b(mod c) or -1 if any of them are <= 0
+# Outputs: return at r0 = a^b(mod c) or -1 if any of them are < 0 or c = 0
 # dependencies: function "mod"
 
 .text
@@ -300,76 +300,90 @@ euclidmod:
     MOV r5, r1
     MOV r6, r2
 
-    #if a<=0, return -1
-    CMP r4, #0
-    BLE euclidmodError
+    #initialize r8
+    MOV r8, #0
 
-    #if b<=0, return -1
+    #special conditions
+
+    #if a<0, return -1
+    CMP r4, #0
+    BLT euclidmodError
+    
+    #if b<0, return -1
     CMP r5, #0
-    BLE euclidmodError
+    BLT euclidmodError
 
     #if c<=0, return -1
     CMP r6, #1
     BLT euclidmodError
-    #if c=1, return 0
-    MOVEQ r0, #0
+
+    #if a and b = 0, return -1
+    ORR r0, r4, r5
+    CMP r0, #0
+    BEQ euclidmodError
+
+
+    MOV r0, #0
+    MOV r1, #0
+
+    #if a > 0 and b = 0, return 1
+    CMP r4, #0
+    MOVGT r0, #1
+    CMP r5, #0
+    MOVEQ r1, #1
+    AND r2, r0, r1
+    CMP r2, #1
+    MOVEQ r0, #1
+    BEQ euclidmodReturn
+
+    MOV r0, #0
+    MOV r1, #0
+
+    #if a = 0 and b > 0, return 0
+    CMP r4, #0
+    MOVEQ r0, #1
+    CMP r5, #0
+    MOVGT r1, #1
+    AND r2, r0, r1
+    CMP r2, #1
+    MOVEQ r0, #1
     BEQ euclidmodReturn
 
     #a=1 will return 1
     CMP r4, #1
     BEQ euclidmodReturn
 
-    #find remainder of a^1 mod c, used to simplify calculation of big power
-    MOV r1, r6
-    BL mod
-
-    #if remainder = 0, return 0
-    CMP r1, #0
+    #if c=1, return 0
+    CMP r6, #1
     MOVEQ r0, #0
     BEQ euclidmodReturn
 
-    #save to r7 for reserve
-    MOV r7, r1
-    #save the count, this is the power of a s.t. a^x mod c = 1
-    MOV r8, #1   
-
-    #find the integer a s.t. a^x = 1 mod(n)
-    StarteuclidmodLoop1:
-        CMP r1, #1
-        MULNE r0, r1, r7
-        ADDNE r8, r8, #1
-        MOVNE r1, r6
-        BLNE mod
-        BNE StarteuclidmodLoop1
-        B EndeuclidmodLoop1
-    EndeuclidmodLoop1:
-
-    # find b mod r8 and replace b
-    MOV r0, r5
-    MOV r1, r8
-    BL mod
-    MOV r5, r1
-
-    #find remainder of a^1 mod c
-    MOV r0, r4
+    #initialization
+    #find remainder of a^1 mod c, used to simplify calculation of big power
     MOV r1, r6
     BL mod
-    #save to r7 for reserve
+    #save the remainder found to r7 for reserve
     MOV r7, r1
-    #save a count, to count against r5
-    MOV r8, #1
+    #increase r8 by 1
+    ADD r8, r8, #1
 
-    #find a^b mod(c)
-    StarteuclidmodLoop2:
+    #if r8 = b, return the remainder
+    CMP r8, r5
+    MOVEQ r0, r7
+    BEQ euclidmodReturn
+
+    #repeat finding mod until power = b
+    StarteuclidmodLoop:
+        MUL r0, r4, r7
+        MOV r1, r6
+        BL mod
+        MOV r7, r1
+        ADD r8, r8, #1
         CMP r8, r5
-        MULNE r0, r1, r7
-        ADDNE r8, r8, #1
-        MOVNE r1, r6
-        BLNE mod
-        BNE StarteuclidmodLoop2
-        B EndeuclidmodLoop2
-    EndeuclidmodLoop2:
-    MOV r0, r1
+        MOVEQ r0, r7
+        BEQ EndeuclidmodLoop
+        B StarteuclidmodLoop
+    EndeuclidmodLoop:
     B euclidmodReturn
 
     euclidmodError:
@@ -389,7 +403,6 @@ euclidmod:
     MOV pc, lr
 .data
 #end euclidmod
-
 
 .global gcd
 
