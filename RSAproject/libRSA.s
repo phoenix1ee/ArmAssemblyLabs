@@ -4,6 +4,7 @@
 # Date: 4/30/2025
 # Purpose: This is a library of functions for RSA algorithm
 # Remarks: RSA project
+# Author: Shun Fai Lee
 #
 
 .global cprivexp
@@ -351,6 +352,7 @@ euclidmod:
     #initialize r8
     MOV r8, #0
     #find remainder of a^1 mod c, used to simplify calculation of big power
+    MOV r0, r4
     MOV r1, r6
     BL mod
     #save the remainder found to r7 for reserve

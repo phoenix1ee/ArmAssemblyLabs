@@ -155,7 +155,7 @@ main:
             MOV r1, r6
             MOV r2, r4
             BL     encrypt_file
-            CMP    r0, #-1
+            CMP    r0, #0
             BEQ    encryptFail               @ on error, print error message
             MOV r12, r0
             LDR r0, =fmt_filename
@@ -216,7 +216,7 @@ main:
             MOV r1, r7
             MOV r2, r4
             BL decrypt_file
-            CMP    r0, #-1
+            CMP    r0, #0
             BEQ    decryptFail               @ on error, print error message
 
             MOV r12, r0

@@ -30,21 +30,37 @@ main:
     LDR r1, =input3
     BL scanf
 
-    LDR r0, =input
-    LDR r0, [r0]
-    LDR r1, =input2
-    LDR r1, [r1]
-    LDR r2, =input3
-    LDR r2, [r2]
-    
-    #BL euclidmod
-    #BL encryptChar
-    BL decryptChar
+    LDR r4, =input
+    LDR r4, [r4]
+    LDR r5, =input2
+    LDR r5, [r5]
+    LDR r6, =input3
+    LDR r6, [r6]
+    MOV r7, #0
 
-    MOV r1, r0
-    LDR r0, =output1
+    starttest:
+    CMP r7, #127
+    BGT endtest
+    LDR r0, =output3
+    MOV r1, r7
     BL printf
+    MOV r0, r7
+    MOV r1, r4
+    MOV r2, r6
+    BL euclidmod
+    MOV r8, r0
 
+    MOV r0, r8
+    MOV r1, r5
+    MOV r2, r6
+    BL euclidmod
+    MOV r1, r0
+    LDR r0, =output4
+    BL printf
+    ADD r7, r7, #1
+    B starttest
+    endtest:
+    
     LDR lr, [sp]
     ADD sp, sp, #4
     MOV pc, lr
@@ -61,5 +77,8 @@ main:
     outputNo: .asciz "\nNumber %d is not prime.\n\n"
     output1: .asciz "\noutput is %d.\n\n"
     output2: .asciz "\nd is %d e is %d n is %d.\n\n"
+    output3: .asciz "%d "
+    output4: .asciz "%d \n"
+
 
 #End main
