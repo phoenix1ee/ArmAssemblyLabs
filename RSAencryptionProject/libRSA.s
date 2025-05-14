@@ -254,6 +254,174 @@ encryptChar:
 .data
 #end encryptChar
 
+.global euclidmodfast
+
+# Function: euclidmodfast
+# Author: S.Lee
+# Purpose: This is the function to calculate modulus maths of form of a^b(mod c)
+#          for use in encryption and decryption maths
+# Inputs: r0: a
+#         r1: b
+#         r2: c
+# Pseudo Code: find the lst remainder r = a mod c. 
+#              1.calculating r*r (mod c) repetitively, 
+#              2.compare each bits of b in binary to an indexer, starting at 0b1, 
+#              3.multiply to result and take mod
+#              4.logical shift indexer left by 1 and repeat 1 until indexer > b
+#              This make use of the multiplicative properties in moduler arithematic and employ the idea of exponential squaring
+#              base on fact that every integer can be represented in sum of powers of 2 and is stored in binary form naturally in register
+#              only a maximum of 2 mod calculation needed for each bits in b
+#              maximum supported b : 2^31-1
+# Outputs: return at r0 = a^b(mod c) or -1 if any of them are < 0 or c = 0
+# dependencies: function "mod"
+
+.text
+euclidmodfast:
+    # function library
+    #r4: a
+    #r5: b
+    #r6: c
+    #r7: temp variable for a mod c
+    #r8: temp variable for place of 2
+    #r10: temp variable for result
+    #r11: temp variable for a^x mod c
+
+    #push stack
+    #reserve r4-r8 value of caller
+    SUB sp, sp, #28
+    STR lr, [sp, #0] 
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+    STR r7, [sp, #16]
+    STR r8, [sp, #20]
+    STR r10, [sp, #24]
+
+    #reserve the input in r4-r6
+    MOV r4, r0
+    MOV r5, r1
+    MOV r6, r2
+
+    #special conditions
+
+    #if a<0, return -1
+    CMP r4, #0
+    BLT euclidmodfastError
+    
+    #if b<0, return -1
+    CMP r5, #0
+    BLT euclidmodfastError
+
+    #if c<=0, return -1
+    CMP r6, #1
+    BLT euclidmodfastError
+
+    #if a and b = 0, return -1
+    ORR r0, r4, r5
+    CMP r0, #0
+    BEQ euclidmodfastError
+
+
+    MOV r0, #0
+    MOV r1, #0
+
+    #if a > 0 and b = 0, return 1
+    CMP r4, #0
+    MOVGT r0, #1
+    CMP r5, #0
+    MOVEQ r1, #1
+    AND r2, r0, r1
+    CMP r2, #1
+    MOVEQ r0, #1
+    BEQ euclidmodfastReturn
+
+    MOV r0, #0
+    MOV r1, #0
+
+    #if a = 0 and b > 0, return 0
+    CMP r4, #0
+    MOVEQ r0, #1
+    CMP r5, #0
+    MOVGT r1, #1
+    AND r2, r0, r1
+    CMP r2, #1
+    MOVEQ r0, #1
+    BEQ euclidmodfastReturn
+
+    #a=1 will return 1
+    CMP r4, #1
+    BEQ euclidmodfastReturn
+
+    #if c=1, return 0
+    CMP r6, #1
+    MOVEQ r0, #0
+    BEQ euclidmodfastReturn
+
+    #initialization
+    #initialize r8 and r10
+    MOV r8, #1
+    MOV r10, #1
+    #find remainder of a^1 mod c, used to simplify calculation of big power
+    MOV r0, r4
+    MOV r1, r6
+    BL mod
+    #save the remainder found to r7 & r11 for reserve
+    MOV r7, r1
+    MOV r11, r1
+
+    #repeat finding mod until place of 2 > b
+    StarteuclidmodfastLoop:
+        #if current index > b, end loop
+        CMP r8, r5
+        BGT EndeuclidmodfastLoop
+
+        #if the current bit in b = 0, skip multiplicaiton to result
+        AND r0, r5, r8
+        CMP r0, #0
+        BEQ euclidmodfastSkip
+
+        #if the current bit in b = 1, multiply the current remainder to result and take mod
+        MUL r0, r10, r11
+        MOV r1, r6
+        BL mod
+        MOV r10, r1
+
+        #shift to next bit and find the next remainder
+        euclidmodfastSkip:
+        LSL r8, r8, #1
+        
+        MUL r0, r11, r11
+        MOV r1, r6
+        BL mod
+        MOV r11, r1
+
+        B StarteuclidmodfastLoop
+    
+    EndeuclidmodfastLoop:
+    #end loop and return
+    MOV r0, r10
+
+    B euclidmodfastReturn
+
+    euclidmodfastError:
+    MOV r0, #-1
+    B euclidmodfastReturn
+
+    euclidmodfastReturn:
+
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    LDR r7, [sp, #16]
+    LDR r8, [sp, #20]
+    LDR r10, [sp, #24]
+    ADD sp, sp, #28
+    MOV pc, lr
+.data
+#end euclidmodfast
+
 .global euclidmod
 
 # Function: euclidmod
