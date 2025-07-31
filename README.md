@@ -3,7 +3,7 @@
 
 This is a collection of labs on written in 32 bit ARM assembly, and a project on demonstrating the concept of RSA encryption.
 
-Final product of the project of RSA encryption is a library file of 32-bit ARM assembly, containing functions to perform key generations, encryption and decryption calculations
+Final product is the project of RSA encryption and below is the summary of the library file written in 32-bit ARM assembly, containing functions to perform key generations, encryption and decryption calculations
 
 | List of function | Purpose                                                                                                                                     | Input                                                                                                                         | Output                                             |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
